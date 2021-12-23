@@ -116,11 +116,17 @@ contract LFGlobalEscrow is Ownable {
         } 
     }
 
-    function init(string memory _referenceId, address payable _receiver, address payable _agent) public payable {
+    function init(string memory _referenceId, address payable _receiver, address payable _agent, bool canDeposit, uint256 _amount) public payable {
         require(msg.sender != address(0), "LFGlobalEscrow: Sender should not be null");
         require(_receiver != address(0), "LFGlobalEscrow: Receiver should not be null");
         //require(_trustedParty != address(0), "Trusted Agent should not be null");
         emit Initiated(_referenceId, msg.sender, msg.value, _receiver, _agent, 0);
+        if (canDeposit){
+            require(_amount <= address(this).balance, "LFGlobalEscrow: LFGlobalEscrow: User should have enough fund");
+            //Deposit ETH to Compound
+            uint256 invested = compound.addInvestment(address(this), ETH_TOKEN_ADDRESS, _amount);
+            emit ETHDeposited(invested);
+        }
         Record storage e = _escrow[_referenceId];
         e.referenceId = _referenceId;
         e.owner = payable(msg.sender);
