@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-interface ICompound {
-    function addInvestment(address _wallet, address _token, uint256 _amount) external returns (uint256 _invested);
-    function removeInvestment(address _wallet, address _token, uint256 _fraction) external;
-    function getInvestment( address _wallet, address _token) external view returns (uint256 _tokenValue, uint256 _periodEnd);
-}
+import "./Compound.sol";
 
 contract LFGlobalEscrow is Ownable {
 
     // The Compound ICompound contract
-    ICompound public compound;
+    Compound public compound;
 
     // Mock token address for ETH
     address constant internal ETH_TOKEN_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -40,7 +35,7 @@ contract LFGlobalEscrow is Ownable {
 
     mapping(string => Record) _escrow;
 
-    constructor( ICompound _compound ) {
+    constructor( Compound _compound ) {
         compound = _compound;
     }
     
@@ -143,7 +138,7 @@ contract LFGlobalEscrow is Ownable {
         _escrow[_referenceId].signer[_agent] = true;
         
         //Deposit ETH to Compound
-        uint256 invested = ICompound(compound).addInvestment(msg.sender, ETH_TOKEN_ADDRESS, msg.value);
+        uint256 invested = compound.addInvestment(msg.sender, ETH_TOKEN_ADDRESS, msg.value);
         emit ETHDeposited(invested);
     }
 
@@ -197,7 +192,7 @@ contract LFGlobalEscrow is Ownable {
         e.lastTxBlock = block.number;
 
         //Withdraw ETH to Compound
-        ICompound(compound).removeInvestment(msg.sender, ETH_TOKEN_ADDRESS, _amount);
+        compound.removeInvestment(msg.sender, ETH_TOKEN_ADDRESS, _amount);
         emit ETHRemoved(_amount);
         require((e.owner).send(_amount));
     }
