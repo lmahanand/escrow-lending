@@ -51,7 +51,7 @@ contract Compound is ICompound{
     }
     
     /**
-     * @dev Invest tokens for a given period.
+     * @dev Invest ETH to Compound
      * @param _wallet The target wallet.
      * @param _token The token address.
      * @param _amount The amount of tokens to invest.

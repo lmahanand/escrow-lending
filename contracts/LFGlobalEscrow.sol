@@ -103,9 +103,9 @@ contract LFGlobalEscrow is Ownable {
     
     modifier multisigcheck(string memory _referenceId) {
         Record storage e = _escrow[_referenceId];
-        require(!e.finalized, "Escrow should not be finalized");
-        require(e.signer[msg.sender], "msg sender should be eligible to sign");
-        require(e.signed[msg.sender] == Sign.NULL, "msg sender should not have signed already"); _;
+        require(!e.finalized, "LFGlobalEscrow: Escrow should not be finalized");
+        require(e.signer[msg.sender], "LFGlobalEscrow: msg sender should be eligible to sign");
+        require(e.signed[msg.sender] == Sign.NULL, "LFGlobalEscrow: msg sender should not have signed already"); _;
         if(e.releaseCount == 2) {
             transferOwnership(e);
         }else if(e.revertCount == 2) {
@@ -117,8 +117,8 @@ contract LFGlobalEscrow is Ownable {
     }
 
     function init(string memory _referenceId, address payable _receiver, address payable _agent) public payable {
-        require(msg.sender != address(0), "Sender should not be null");
-        require(_receiver != address(0), "Receiver should not be null");
+        require(msg.sender != address(0), "LFGlobalEscrow: Sender should not be null");
+        require(_receiver != address(0), "LFGlobalEscrow: Receiver should not be null");
         //require(_trustedParty != address(0), "Trusted Agent should not be null");
         emit Initiated(_referenceId, msg.sender, msg.value, _receiver, _agent, 0);
         Record storage e = _escrow[_referenceId];
@@ -136,10 +136,6 @@ contract LFGlobalEscrow is Ownable {
         _escrow[_referenceId].signer[msg.sender] = true;
         _escrow[_referenceId].signer[_receiver] = true;
         _escrow[_referenceId].signer[_agent] = true;
-        
-        //Deposit ETH to Compound
-        uint256 invested = compound.addInvestment(msg.sender, ETH_TOKEN_ADDRESS, msg.value);
-        emit ETHDeposited(invested);
     }
 
     function release(string memory _referenceId) public multisigcheck(_referenceId) {
@@ -159,8 +155,8 @@ contract LFGlobalEscrow is Ownable {
 
     function dispute(string memory _referenceId) public {
         Record storage e = _escrow[_referenceId];
-        require(!e.finalized, "Escrow should not be finalized");
-        require(msg.sender == e.sender || msg.sender == e.receiver, "Only sender or receiver can call dispute");
+        require(!e.finalized, "LFGlobalEscrow: Escrow should not be finalized");
+        require(msg.sender == e.sender || msg.sender == e.receiver, "LFGlobalEscrow: Only sender or receiver can call dispute");
         dispute(e);
     }
 
@@ -184,9 +180,9 @@ contract LFGlobalEscrow is Ownable {
 
     function withdraw(string memory _referenceId, uint256 _amount) public {
         Record storage e = _escrow[_referenceId];
-        require(e.finalized, "Escrow should be finalized before withdrawal");
-        require(msg.sender == e.owner, "only owner can withdraw funds");
-        require(_amount <= e.fund, "cannot withdraw more than the deposit");
+        require(e.finalized, "LFGlobalEscrow: Escrow should be finalized before withdrawal");
+        require(msg.sender == e.owner, "LFGlobalEscrow: only owner can withdraw funds");
+        require(_amount <= e.fund, "LFGlobalEscrow: cannot withdraw more than the deposit");
         emit Withdrawn(_referenceId, msg.sender, _amount, e.lastTxBlock);
         e.fund = e.fund - _amount;
         e.lastTxBlock = block.number;
@@ -195,5 +191,18 @@ contract LFGlobalEscrow is Ownable {
         compound.removeInvestment(msg.sender, ETH_TOKEN_ADDRESS, _amount);
         emit ETHRemoved(_amount);
         require((e.owner).send(_amount));
+    }
+
+    /**
+     * @dev Deposit ETH to Compound
+     * @param _amount The amount of ETH to invest
+     */
+    function deposit(uint256 _amount) external
+        returns (uint256 _invested){
+        require(_amount <= (msg.sender).balance, "LFGlobalEscrow: LFGlobalEscrow: User should have enough fund");
+
+        //Deposit ETH to Compound
+        _invested = compound.addInvestment(msg.sender, ETH_TOKEN_ADDRESS, _amount);
+        emit ETHDeposited(_invested);
     }
 }
