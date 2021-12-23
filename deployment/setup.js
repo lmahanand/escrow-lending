@@ -2,7 +2,7 @@ const { ethers, waffle } = require("hardhat");
 
 const CETH = '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5';
 const COMPOUND_REGISTRY = '0x6F48C09d171F1526Bf88fA718bbe87e307e03EaF';
-const ETH_TOKEN_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
+const ETH_TOKEN_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
 async function main() {
     [deployer] = await ethers.getSigners();
